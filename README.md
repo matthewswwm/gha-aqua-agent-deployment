@@ -46,7 +46,11 @@ General troubleshooting guide information should be added here.
 
 ### Issue 1
 
-Info and solutions (if any) for specific issues should have their own dedicated section.
+If you are encountering grpc or networking errors, check the following:
+
+* Is the network opened?
+* Is the port correct?
+* In the `AQUA_GATEWAY_URL`, is gw present? i.e. `<console_url>-gw.cloud.aquasec.com:443`
 
 ## To-do list
 
