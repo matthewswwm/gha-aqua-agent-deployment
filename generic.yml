@@ -1,0 +1,88 @@
+name: Deploy Aqua Enforcer
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      AQUA_DOCKER_USERNAME: ${{ secrets.AQUA_DOCKER_USERNAME }}
+      AQUA_DOCKER_PASSWORD: ${{ secrets.AQUA_DOCKER_PASSWORD }}
+      AQUA_ENFORCER_TOKEN: ${{ secrets.AQUA_ENFORCER_TOKEN }}
+      KUBE_CONFIG_B64: ${{ secrets.KUBE_CONFIG_B64 }}
+
+      AQUA_GATEWAY_URL: ${{ vars.AQUA_GATEWAY_URL }}
+      PLATFORM: ${{ vars.AQUA_PLATFORM }}
+
+    steps:
+      # 1. (Optional) Clone repository
+      # - name: Clone repository
+      #   run: |
+      #     git init .
+      #     git remote add origin https://github.com/${{ github.repository }}
+      #     git fetch origin ${{ github.ref }}
+      #     git checkout -b main FETCH_HEAD
+
+      # 2. Install kubectl (latest stable)
+      - name: Install kubectl
+        run: |
+          KUBECTL_VERSION=$(curl -s https://dl.k8s.io/release/stable.txt)
+          curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/kubectl
+          kubectl version --client
+
+      # 3. Configure kubeconfig from base64 secret
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG_B64 }}" | base64 -d > ~/.kube/config
+
+      # 4. Deploy Aqua Enforcer (Manifests)
+      #    (a) namespace
+      #    (b) registry secret
+      #    (c) service account & RBAC
+      #    (d) enforcer token secret
+      #    (e) configMap (with environment-based AQUA_SERVER)
+      #    (f) daemonset
+
+      - name: Create Aqua namespace
+        run: |
+          kubectl create namespace aqua \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create Aqua registry secret
+        run: |
+          kubectl create secret docker-registry aqua-registry \
+            --docker-server=registry.aquasec.com \
+            --docker-username="${{ env.AQUA_DOCKER_USERNAME }}" \
+            --docker-password="${{ env.AQUA_DOCKER_PASSWORD }}" \
+            -n aqua \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create service account and RBAC
+        run: |
+          kubectl apply -f \
+            "https://raw.githubusercontent.com/aquasecurity/deployments/2022.4/enforcers/aqua_enforcer/kubernetes_and_openshift/manifests/001_aqua_enforcer_rbac/${{ env.PLATFORM }}/aqua_sa.yaml"
+
+      - name: Create enforcer token secret
+        run: |
+          kubectl create secret generic enforcer-token \
+            --from-literal=token="${{ env.AQUA_ENFORCER_TOKEN }}" \
+            -n aqua \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy ConfigMap (custom AQUA_SERVER from GitHub Variable)
+        run: |
+          curl -s https://raw.githubusercontent.com/aquasecurity/deployments/2022.4/enforcers/aqua_enforcer/kubernetes_and_openshift/manifests/002_aqua_enforcer_configMap.yaml \
+            | sed -e "s/AQUA_SERVER:[[:blank:]]*\".*\"/AQUA_SERVER: \"${{ env.AQUA_GATEWAY_URL }}\"/" \
+            | kubectl apply -f -
+
+      - name: Deploy Aqua Enforcer DaemonSet
+        run: |
+          kubectl apply -f \
+            "https://raw.githubusercontent.com/aquasecurity/deployments/2022.4/enforcers/aqua_enforcer/kubernetes_and_openshift/manifests/004_aqua_enforcer_daemonset.yaml"
