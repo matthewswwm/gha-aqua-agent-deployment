@@ -1,4 +1,4 @@
-name: Deploy Aqua Enforcer
+name: Deploy Aqua Enforcer (Generic)
 
 on:
   push:
