@@ -20,6 +20,19 @@ The features of the generic.yml:
 3. It runs using the GitHub Action generic runner environment, aka latest ubuntu.
     1. It installs Kubernetes to run kubectl directly
 
+### local_manifests
+
+The features of the local_manifests.yml:
+
+1. The code is cloud-agnostic. It can be used to deploy on any K8s cluster, so long as you have the kubeconfig file.
+
+2. It creates the K8s resources using the manifests from the yamls directory.
+
+3. It runs using the GitHub Action generic runner environment, aka latest ubuntu.
+    1. It installs Kubernetes to run kubectl directly
+
+### Secrets & variables
+
 #### Secrets
 
 | Name | Description |
@@ -56,12 +69,7 @@ If you are encountering grpc or networking errors, check the following:
 
 * Support KE deployment
 * Possible Workflows:
-    1. generic_self_maintained:
-        1. Store the YAML files in this repo
-        2. Clone the repo
-        3. Apply the files
-        4. Don't need to curl the official deployment repository
-    2. gke_marketplace_plugin: Use the GHA marketplace deploy to GKE action.
+    1. gke_marketplace_plugin: Use the GHA marketplace deploy to GKE action.
 * ~~Support generic repositories~~
     * Rejected. This is dependent on the YAML files and the way the K8s resource is deployed. It will vary according to the workflow
 

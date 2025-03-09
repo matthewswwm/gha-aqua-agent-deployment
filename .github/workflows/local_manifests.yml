@@ -46,47 +46,46 @@ jobs:
       #    (a) namespace
       #    (b) registry secret
       #    (c) service account & RBAC
-      #    (d) enforcer token secret
+      #    (d) enforcer token secret # No need to use the yaml manifests as it is a single entry
       #    (e) configMap
       #    (f) daemonset
 
-      - name: Show working dir
-        run : |
-          ls -la          
+    #   - name: Show working dir
+    #     run : |
+    #       ls -la
 
-    #   - name: Create Aqua namespace
-    #     run: |
-    #       kubectl create namespace aqua \
-    #         --dry-run=client -o yaml | kubectl apply -f -
+      - name: Create Aqua namespace
+        run: |
+          kubectl create namespace aqua \
+            --dry-run=client -o yaml | kubectl apply -f -
 
-    #   - name: Create Aqua registry secret
-    #     run: |
-    #       kubectl create secret docker-registry aqua-registry \
-    #         --docker-server=registry.aquasec.com \
-    #         --docker-username="${{ env.AQUA_DOCKER_USERNAME }}" \
-    #         --docker-password="${{ env.AQUA_DOCKER_PASSWORD }}" \
-    #         -n aqua \
-    #         --dry-run=client -o yaml | kubectl apply -f -
+      - name: Create Aqua registry secret
+        run: |
+          kubectl create secret docker-registry aqua-registry \
+            --docker-server=registry.aquasec.com \
+            --docker-username="${{ env.AQUA_DOCKER_USERNAME }}" \
+            --docker-password="${{ env.AQUA_DOCKER_PASSWORD }}" \
+            -n aqua \
+            --dry-run=client -o yaml | kubectl apply -f -
 
-    #   - name: Create service account and RBAC
-    #     run: |
-    #       kubectl apply -f \
-    #         "https://raw.githubusercontent.com/aquasecurity/deployments/2022.4/enforcers/aqua_enforcer/kubernetes_and_openshift/manifests/001_aqua_enforcer_rbac/${{ env.PLATFORM }}/aqua_sa.yaml"
+      - name: Create service account and RBAC
+        run: |
+          kubectl apply -f \
+            ./yamls/aqua_enforcer/manifests/001_aqua_enforcer_rbac/${{ env.PLATFORM }}/aqua_sa.yaml
 
-    #   - name: Create enforcer token secret
-    #     run: |
-    #       kubectl create secret generic enforcer-token \
-    #         --from-literal=token="${{ env.AQUA_ENFORCER_TOKEN }}" \
-    #         -n aqua \
-    #         --dry-run=client -o yaml | kubectl apply -f -
+      - name: Create enforcer token secret
+        run: |
+          kubectl create secret generic enforcer-token \
+            --from-literal=token="${{ env.AQUA_ENFORCER_TOKEN }}" \
+            -n aqua \
+            --dry-run=client -o yaml | kubectl apply -f -
 
-    #   - name: Deploy ConfigMap
-    #     run: |
-    #       curl -s https://raw.githubusercontent.com/aquasecurity/deployments/2022.4/enforcers/aqua_enforcer/kubernetes_and_openshift/manifests/002_aqua_enforcer_configMap.yaml \
-    #         | sed -e "s/AQUA_SERVER:[[:blank:]]*\".*\"/AQUA_SERVER: \"${{ env.AQUA_GATEWAY_URL }}\"/" \
-    #         | kubectl apply -f -
+      - name: Deploy ConfigMap
+        run: |
+          cat ./yamls/aqua_enforcer/manifests/002_aqua_enforcer_configMap.yaml \
+            | sed -e "s/AQUA_SERVER:[[:blank:]]*\".*\"/AQUA_SERVER: \"${{ env.AQUA_GATEWAY_URL }}\"/" \
+            | kubectl apply -f -/
 
-    #   - name: Deploy Aqua Enforcer DaemonSet
-    #     run: |
-    #       kubectl apply -f \
-    #         "https://raw.githubusercontent.com/aquasecurity/deployments/2022.4/enforcers/aqua_enforcer/kubernetes_and_openshift/manifests/004_aqua_enforcer_daemonset.yaml"
+      - name: Deploy Aqua Enforcer DaemonSet
+        run: |
+          kubectl apply -f ./yamls/aqua_enforcer/manifests/004_aqua_enforcer_daemonset.yaml
