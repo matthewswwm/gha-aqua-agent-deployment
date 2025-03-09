@@ -1,8 +1,6 @@
 name: Deploy Aqua Enforcer (local_manifests)
 
 on:
-  push:
-    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -50,9 +48,9 @@ jobs:
       #    (e) configMap
       #    (f) daemonset
 
-    #   - name: Show working dir
-    #     run : |
-    #       ls -la
+      - name: Show working dir
+        run : |
+          ls -la
 
       - name: Create Aqua namespace
         run: |

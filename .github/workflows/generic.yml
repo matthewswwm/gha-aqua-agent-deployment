@@ -1,8 +1,6 @@
 name: Deploy Aqua Enforcer (Generic)
 
 on:
-  push:
-    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
