@@ -80,10 +80,9 @@ jobs:
 
       - name: Deploy ConfigMap
         run: |
-          cat ./yamls/aqua_enforcer/manifests/002_aqua_enforcer_configMap.yaml
-          # cat ./yamls/aqua_enforcer/manifests/002_aqua_enforcer_configMap.yaml \
-          #   | sed -e "s/AQUA_SERVER:[[:blank:]]*\".*\"/AQUA_SERVER: \"${{ env.AQUA_GATEWAY_URL }}\"/" \
-          #   | kubectl apply -f -/
+          cat ./yamls/aqua_enforcer/manifests/002_aqua_enforcer_configMap.yaml \
+            | sed -e "s/AQUA_SERVER:[[:blank:]]*\".*\"/AQUA_SERVER: \"${{ env.AQUA_GATEWAY_URL }}\"/" \
+            | kubectl apply -f -
 
       - name: Deploy Aqua Enforcer DaemonSet
         run: |
