@@ -16,11 +16,12 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       AQUA_REG: ${{ vars.AQUA_REG}} # The registry that stores the aqua enforcer image
-      AQUA_REG_USERNAME: ${{ secrets.AQUA_REG_USERNAME }} # registry credentials to pull the image
-      AQUA_REG_PASSWORD: ${{ secrets.AQUA_REG_PASSWORD }} # registry credentials to pull the image
+      AQUA_REG_USERNAME: ${{ secrets.AQUA_REG_USERNAME }} # Registry credentials to pull the image
+      AQUA_REG_PASSWORD: ${{ secrets.AQUA_REG_PASSWORD }} # Registry credentials to pull the image
       AQUA_IMAGE: ${{ vars.AQUA_IMAGE}} # The full name of the image (repository path and tag)
 
-      AQUA_CONSOLE_URL: ${{ vars.AQUA_CONSOLE_URL }} # for API calls and sign in
+      AQUA_CONSOLE_URL: ${{ vars.AQUA_CONSOLE_URL }} # For CWPP API calls
+      AQUA_AUTH_URL: ${{ vars.AQUA_AUTH_URL }} # For authenticating against Aqua SaaS
       AQUA_GATEWAY_URL: ${{ vars.AQUA_GATEWAY_URL }}
       AQUA_SAAS_USER: ${{ secrets.AQUA_SAAS_USER }}
       AQUA_SAAS_PASSWORD: ${{ secrets.AQUA_SAAS_PASSWORD }}
@@ -51,10 +52,16 @@ jobs:
           payload="{\"email\":\"${{ secrets.AQUA_SAAS_USER }}\", \"password\":\"${{ secrets.AQUA_SAAS_PASSWORD }}\"}"
 
           # Send the POST request and store the response in a variable
-          response=$(curl -s -X POST -H "Content-Type: application/json" -d "$payload" "${{ env.AQUA_CONSOLE_URL }}/v2/signin")
+          response=$(curl -s -X POST -H "Content-Type: application/json" -d "$payload" "${{ env.AQUA_AUTH_URL }}/v2/signin")
 
           # Parse the response to get the Bearer Token
           export aquatoken=$(echo "$response" | jq -r ".data.token")
+
+          # Error handling
+          if [[ "$aquatoken" == "null" ]]; then
+              echo "[ERROR]: Bearer Token returned is null. Please ensure the authentication URL, email and password are correct. Check if the password has special characters that are being interpolated."
+              exit 1
+          fi
 
           echo "[INFO]: authentication API call completed"
 
