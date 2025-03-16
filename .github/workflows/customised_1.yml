@@ -2,33 +2,34 @@ name: Deploy Aqua Enforcer (customised_1)
 
 on:
   workflow_dispatch:
+      inputs:
+          PLATFORM:
+            description: "Which cloud provider are you deploying to? e.g. aks, gke"
+            required: true
+            default: "gke"
+          NAMESPACE:
+            description: "What namespace are you deploying to? This will also determine the name of the Aqua enforcer group"
+            required: true
 
 jobs:
   deploy:
     runs-on: ubuntu-24.04
 
     env:
-      AQUA_DOCKER_USERNAME: ${{ secrets.AQUA_DOCKER_USERNAME }} # Change to aqua_reg
-      AQUA_DOCKER_PASSWORD: ${{ secrets.AQUA_DOCKER_PASSWORD }} # Change to aqua_reg
-      AQUA_ENFORCER_TOKEN: ${{ secrets.AQUA_ENFORCER_TOKEN }} # Remove this as it will be dynamic
+      AQUA_REG: ${{ vars.AQUA_REG}} # The registry that stores the aqua enforcer image
+      AQUA_REG_USERNAME: ${{ secrets.AQUA_REG_USERNAME }} # registry credentials to pull the image
+      AQUA_REG_PASSWORD: ${{ secrets.AQUA_REG_PASSWORD }} # registry credentials to pull the image
+      AQUA_IMAGE: ${{ vars.AQUA_IMAGE}} # The full name of the image (repository path and tag)
+
+      AQUA_CONSOLE_URL: ${{ vars.AQUA_CONSOLE_URL }} # for API calls and sign in
+      AQUA_GATEWAY_URL: ${{ vars.AQUA_GATEWAY_URL }}
+      AQUA_SAAS_USER: ${{ secrets.AQUA_SAAS_USER }}
+      AQUA_SAAS_PASSWORD: ${{ secrets.AQUA_SAAS_PASSWORD }}
+
       KUBE_CONFIG_B64: ${{ secrets.KUBE_CONFIG_B64 }} # This will not be used in final ver
 
-      AQUA_GATEWAY_URL: ${{ vars.AQUA_GATEWAY_URL }}
-      PLATFORM: ${{ vars.PLATFORM }}
-
-      # Missing values
-      # 1. SaaS user
-      # 2. SaaS password
-      # 3. docker-server value to make the registry a variable
-      # 4. Image name to repalce in deployment Yaml
-
-      # Missing steps
-      # 1. Auth with API
-      # 2. Create enf grp
-      # 3. Retrieve enf token from get API call
-
     steps:
-      # 1. (Optional) Clone repository
+      # 1. Clone repository
       - name: Clone repository
         run: |
           git init .
@@ -36,20 +37,88 @@ jobs:
           git fetch origin ${{ github.ref }}
           git checkout -b main FETCH_HEAD
 
-      # 2. Install kubectl (latest stable)
-      # - name: Install kubectl
-      #   run: |
-      #     KUBECTL_VERSION=$(curl -sL https://dl.k8s.io/release/stable.txt | tr -d '\n')
-      #     curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
-      #     chmod +x kubectl
-      #     sudo mv kubectl /usr/local/bin/kubectl
-      #     kubectl version --client
-
-      # 3. Configure kubeconfig from base64 secret
+      # n. Configure kubeconfig from base64 secret (to be removed in final version)
       - name: Configure kubectl
         run: |
           mkdir -p ~/.kube
           echo "${{ secrets.KUBE_CONFIG_B64 }}" | base64 -d > ~/.kube/config
+
+      # 2. Authenticate against the Aqua console and create an enforcer group
+      - name: Create Aqua Enforcer Group
+        run: |
+          echo "[INFO]: Running authentication API call"
+
+          payload="{\"email\":\"${{ secrets.AQUA_SAAS_USER }}\", \"password\":\"${{ secrets.AQUA_SAAS_PASSWORD }}\"}"
+
+          # Send the POST request and store the response in a variable
+          response=$(curl -s -X POST -H "Content-Type: application/json" -d "$payload" "${{ env.AQUA_CONSOLE_URL }}/v2/signin")
+
+          # Parse the response to get the Bearer Token
+          export aquatoken=$(echo "$response" | jq -r ".data.token")
+
+          echo "[INFO]: authentication API call completed"
+
+          echo "[INFO]: Running post_enforcer_grp API call"
+
+            export enf_grp_payload=$(cat <<EOF
+            {
+              "id": "${{ github.event.inputs.NAMESPACE }}",
+              "logicalname": "${{ github.event.inputs.NAMESPACE }}",
+              "token": "${{ github.event.inputs.NAMESPACE }}",
+              "enforce": "true",
+              "allowed_labels": [],
+              "allowed_secrets": [],
+              "container_activity_protection": true,
+              "description": "",
+              "gateways": "",
+              "host_os": "Linux",
+              "hostname": "",
+              "image_assurance": true,
+              "network_protection": false,
+              "behavioral_engine": true,
+              "orchestrator":{"type":"kubernetes","service_account":"","namespace":"${{ github.event.inputs.NAMESPACE }}"},
+              "runtime_type": "docker",
+              "sync_host_images": true,
+              "syscall_enabled": false,
+              "type": "agent",
+              "user_access_control": false,
+              "runtime_policy_name": "",
+              "allowed_labels_temp": [],
+              "allowed_secrets_temp": [],
+              "risk_explorer_auto_discovery": false,
+              "host_protection": true,
+              "host_network_protection": false,
+              "host_user_protection": false,
+              "host_behavioral_engine": true,
+              "allow_kube_enforcer_audit": false,
+              "auto_discovery_enabled": false,
+              "auto_discover_configure_registries": false,
+              "auto_scan_discovered_images_running_containers": false,
+              "admission_control": false,
+              "block_admission_control": false,
+              "micro_enforcer_injection": false,
+              "micro_enforcer_image_name": "",
+              "micro_enforcer_secrets_name": "",
+              "auto_copy_secrets": false,
+              "micro_enforcer_certs_secrets_name": "",
+              "kube_bench_image_name": "",
+              "antivirus_protection": false,
+              "container_antivirus_protection": false,
+              "host_assurance": true,
+              "host_forensics_collection": true,
+              "container_forensics_collection": true,
+              "enforcer_image_name": "${{ env.AQUA_IMAGE }}"
+            }
+          EOF
+            )
+
+          local enf_grp_response=$(curl -X POST \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer $aquatoken" \
+              -d "$enf_grp_payload" \
+              ${{ env.AQUA_CONSOLE_URL }}/api/v1/hostsbatch)
+
+          echo "[INFO]: post_enforcer_grp API call for $enf_grp_name completed"
 
       # 4. Deploy Aqua Enforcer (Manifests)
       #    (a) namespace
@@ -68,24 +137,24 @@ jobs:
           kubectl create namespace aqua \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Create Aqua registry secret # Update server to become variable
+      - name: Create Aqua registry secret
         run: |
           kubectl create secret docker-registry aqua-registry \
-            --docker-server=registry.aquasec.com \
-            --docker-username="${{ env.AQUA_DOCKER_USERNAME }}" \
-            --docker-password="${{ env.AQUA_DOCKER_PASSWORD }}" \
+            --docker-server=${{ env.AQUA_REG }} \
+            --docker-username="${{ env.AQUA_REG_USERNAME }}" \
+            --docker-password="${{ env.AQUA_REG_PASSWORD }}" \
             -n aqua \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Create service account and RBAC
         run: |
           kubectl apply -f \
-            ./yamls/aqua_enforcer/manifests/001_aqua_enforcer_rbac/${{ env.PLATFORM }}/aqua_sa.yaml
+            ./yamls/aqua_enforcer/manifests/001_aqua_enforcer_rbac/${{ github.event.inputs.PLATFORM }}/aqua_sa.yaml
 
-      - name: Create enforcer token secret # Update this to reference API retrieved value
+      - name: Create enforcer token secret
         run: |
           kubectl create secret generic enforcer-token \
-            --from-literal=token="${{ env.AQUA_ENFORCER_TOKEN }}" \
+            --from-literal=token="${{ github.event.inputs.NAMESPACE }}" \
             -n aqua \
             --dry-run=client -o yaml | kubectl apply -f -
 
@@ -93,8 +162,11 @@ jobs:
         run: |
           cat ./yamls/aqua_enforcer/manifests/002_aqua_enforcer_configMap.yaml \
             | sed -e "s/AQUA_SERVER:[[:blank:]]*\".*\"/AQUA_SERVER: \"${{ env.AQUA_GATEWAY_URL }}\"/" \
+            | sed -e "s/AQUA_LOGICAL_NAME:[[:blank:]]*\".*\"/AQUA_LOGICAL_NAME: \"${{ github.event.inputs.NAMESPACE }}\"/" \
             | kubectl apply -f -
 
-      - name: Deploy Aqua Enforcer DaemonSet # Update this to sed the image value
+      - name: Deploy Aqua Enforcer DaemonSet
         run: |
-          kubectl apply -f ./yamls/aqua_enforcer/manifests/004_aqua_enforcer_daemonset.yaml
+          cat ./yamls/aqua_enforcer/manifests/004_aqua_enforcer_daemonset.yaml \
+            | sed -e "s/image:[[:blank:]]*\".*\"/image: \"${{ env.AQUA_IMAGE }}\"/" \
+            | kubectl apply -f -

@@ -5,13 +5,11 @@ metadata:
   namespace: aqua
 data:
   AQUA_HEALTH_MONITOR_ENABLED: "true"
-  AQUA_INSTALL_PATH: "/var/lib/aquasec"
-  # AQUA_PRODUCT_PATH: "/opt/aquasec"
-  AQUA_SERVER: "aqua-gateway:8443"
+  AQUA_CLEAN_INSTALL: "true"
+  AQUA_NETWORK_FAIL_MODE: "open"
+  AQUA_INSTALL_PATH: "/var/lib/aquasec2"
+  AQUA_MEMORY_PRESSURE: "critical"
+  AQUA_SERVER: "aqua-gateway:8443" # this is replaced
+  AQUA_LOGICAL_NAME: "" # this is replaced
   RESTART_CONTAINERS: "no"
-  AQUA_LOGICAL_NAME: ""
-  AQUA_EXPRESS_MODE: "false"        # Change to true, to enable express mode deployment of enforcer
-  # AQUA_PUBLIC_KEY: "/opt/aquasec/ssl/aqua_enforcer.crt"
-  # AQUA_PRIVATE_KEY: "/opt/aquasec/ssl/aqua_enforcer.key"
-  # AQUA_ROOT_CA: "/opt/aquasec/ssl/rootCA.crt"
-  # AQUA_OCP_FULL_VERSION: <OCP version> #set this variable with the exact OCP version to allow accurate vulnerability scanning
+  SILENT: "yes"
