@@ -112,7 +112,7 @@ jobs:
           EOF
           )
 
-          local enf_grp_response=$(curl -X POST \
+          enf_grp_response=$(curl -X POST \
               -H "Content-Type: application/json" \
               -H "Authorization: Bearer $aquatoken" \
               -d "$enf_grp_payload" \
