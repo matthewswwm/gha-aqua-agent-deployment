@@ -72,7 +72,7 @@ jobs:
             "id": "${{ github.event.inputs.CLUSTER }}",
             "logicalname": "${{ github.event.inputs.CLUSTER }}",
             "token": "${{ github.event.inputs.CLUSTER }}",
-            "enforce": "true",
+            "enforce": true,
             "allowed_labels": [],
             "allowed_secrets": [],
             "container_activity_protection": true,
