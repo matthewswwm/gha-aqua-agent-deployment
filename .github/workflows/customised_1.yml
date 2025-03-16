@@ -14,7 +14,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-24.04
-
     env:
       AQUA_REG: ${{ vars.AQUA_REG}} # The registry that stores the aqua enforcer image
       AQUA_REG_USERNAME: ${{ secrets.AQUA_REG_USERNAME }} # registry credentials to pull the image
@@ -46,6 +45,7 @@ jobs:
       # 2. Authenticate against the Aqua console and create an enforcer group
       - name: Create Aqua Enforcer Group
         run: |
+          set -x # troubleshooting
           echo "[INFO]: Running authentication API call"
 
           payload="{\"email\":\"${{ secrets.AQUA_SAAS_USER }}\", \"password\":\"${{ secrets.AQUA_SAAS_PASSWORD }}\"}"
@@ -60,57 +60,57 @@ jobs:
 
           echo "[INFO]: Running post_enforcer_grp API call"
 
-            export enf_grp_payload=$(cat <<EOF
-            {
-              "id": "${{ github.event.inputs.CLUSTER }}",
-              "logicalname": "${{ github.event.inputs.CLUSTER }}",
-              "token": "${{ github.event.inputs.CLUSTER }}",
-              "enforce": "true",
-              "allowed_labels": [],
-              "allowed_secrets": [],
-              "container_activity_protection": true,
-              "description": "",
-              "gateways": "",
-              "host_os": "Linux",
-              "hostname": "",
-              "image_assurance": true,
-              "network_protection": false,
-              "behavioral_engine": true,
-              "orchestrator":{"type":"kubernetes","service_account":"","namespace":"aqua"},
-              "runtime_type": "docker",
-              "sync_host_images": true,
-              "syscall_enabled": false,
-              "type": "agent",
-              "user_access_control": false,
-              "runtime_policy_name": "",
-              "allowed_labels_temp": [],
-              "allowed_secrets_temp": [],
-              "risk_explorer_auto_discovery": false,
-              "host_protection": true,
-              "host_network_protection": false,
-              "host_user_protection": false,
-              "host_behavioral_engine": true,
-              "allow_kube_enforcer_audit": false,
-              "auto_discovery_enabled": false,
-              "auto_discover_configure_registries": false,
-              "auto_scan_discovered_images_running_containers": false,
-              "admission_control": false,
-              "block_admission_control": false,
-              "micro_enforcer_injection": false,
-              "micro_enforcer_image_name": "",
-              "micro_enforcer_secrets_name": "",
-              "auto_copy_secrets": false,
-              "micro_enforcer_certs_secrets_name": "",
-              "kube_bench_image_name": "",
-              "antivirus_protection": false,
-              "container_antivirus_protection": false,
-              "host_assurance": true,
-              "host_forensics_collection": true,
-              "container_forensics_collection": true,
-              "enforcer_image_name": "${{ env.AQUA_IMAGE }}"
-            }
+          export enf_grp_payload=$(cat <<EOF
+          {
+            "id": "${{ github.event.inputs.CLUSTER }}",
+            "logicalname": "${{ github.event.inputs.CLUSTER }}",
+            "token": "${{ github.event.inputs.CLUSTER }}",
+            "enforce": "true",
+            "allowed_labels": [],
+            "allowed_secrets": [],
+            "container_activity_protection": true,
+            "description": "",
+            "gateways": "",
+            "host_os": "Linux",
+            "hostname": "",
+            "image_assurance": true,
+            "network_protection": false,
+            "behavioral_engine": true,
+            "orchestrator":{"type":"kubernetes","service_account":"","namespace":"aqua"},
+            "runtime_type": "docker",
+            "sync_host_images": true,
+            "syscall_enabled": false,
+            "type": "agent",
+            "user_access_control": false,
+            "runtime_policy_name": "",
+            "allowed_labels_temp": [],
+            "allowed_secrets_temp": [],
+            "risk_explorer_auto_discovery": false,
+            "host_protection": true,
+            "host_network_protection": false,
+            "host_user_protection": false,
+            "host_behavioral_engine": true,
+            "allow_kube_enforcer_audit": false,
+            "auto_discovery_enabled": false,
+            "auto_discover_configure_registries": false,
+            "auto_scan_discovered_images_running_containers": false,
+            "admission_control": false,
+            "block_admission_control": false,
+            "micro_enforcer_injection": false,
+            "micro_enforcer_image_name": "",
+            "micro_enforcer_secrets_name": "",
+            "auto_copy_secrets": false,
+            "micro_enforcer_certs_secrets_name": "",
+            "kube_bench_image_name": "",
+            "antivirus_protection": false,
+            "container_antivirus_protection": false,
+            "host_assurance": true,
+            "host_forensics_collection": true,
+            "container_forensics_collection": true,
+            "enforcer_image_name": "${{ env.AQUA_IMAGE }}"
+          }
           EOF
-            )
+          )
 
           local enf_grp_response=$(curl -X POST \
               -H "Content-Type: application/json" \
@@ -120,7 +120,7 @@ jobs:
 
           echo "[INFO]: post_enforcer_grp API call for $enf_grp_name completed"
 
-      # 4. Deploy Aqua Enforcer (Manifests)
+      # 3. Deploy Aqua Enforcer (Manifests)
       #    (a) namespace
       #    (b) registry secret
       #    (c) service account & RBAC
