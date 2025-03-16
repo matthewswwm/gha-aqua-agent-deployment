@@ -77,7 +77,7 @@ jobs:
             "allowed_secrets": [],
             "container_activity_protection": true,
             "description": "",
-            "gateways": "",
+            "gateways": [],
             "host_os": "Linux",
             "hostname": "",
             "image_assurance": true,
@@ -175,5 +175,5 @@ jobs:
       - name: Deploy Aqua Enforcer DaemonSet
         run: |
           cat ./yamls/aqua_enforcer/manifests/004_aqua_enforcer_daemonset.yaml \
-            | sed -e "s/image:[[:blank:]]*\".*\"/image: \"${{ env.AQUA_IMAGE }}\"/" \
+            | sed -e "s|image:[[:blank:]]*[^[:space:]]*|image: \"${{ env.AQUA_IMAGE }}\"|" \
             | kubectl apply -f -
