@@ -31,6 +31,18 @@ The features of the local_manifests.yml:
 3. It runs using the GitHub Action generic runner environment, aka latest ubuntu.
     1. It installs Kubernetes to run kubectl directly
 
+### customised_1
+
+The features of the customised_1.yml:
+
+1. Added user input support for platform and which cluster the Enforcer will be deployed to. This also determines the token and name of the Aqua enforcer
+
+2. Updated the variables used to be more agnostic and flexible
+
+3. Dynamically creates an enforcer group through an API call based on the user input
+
+4. Added more sed statements to the configmap and daemonset deployments for additional flexibility
+
 ### Secrets & variables
 
 #### Secrets
