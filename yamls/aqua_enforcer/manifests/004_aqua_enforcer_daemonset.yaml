@@ -156,19 +156,19 @@ spec:
           type: ""
         name: etc
       - hostPath:
-          path: /var/lib/aquasec
+          path: /var/lib/aquasec2
           type: ""
         name: aquasec
       - hostPath:
-          path: /var/lib/aquasec/tmp
+          path: /var/lib/aquasec2/tmp
           type: ""
         name: aquasec-tmp
       - hostPath:
-          path: /var/lib/aquasec/audit
+          path: /var/lib/aquasec2/audit
           type: ""
         name: aquasec-audit
       - hostPath:
-          path: /var/lib/aquasec/data
+          path: /var/lib/aquasec2/data
           type: ""
         name: aquasec-data
       - hostPath:
