@@ -15,13 +15,13 @@ jobs:
   deploy:
     runs-on: ubuntu-24.04
     env:
-      AQUA_REG: ${{ vars.AQUA_REG}} # The registry that stores the aqua enforcer image
-      AQUA_REG_USERNAME: ${{ secrets.AQUA_REG_USERNAME }} # Registry credentials to pull the image
-      AQUA_REG_PASSWORD: ${{ secrets.AQUA_REG_PASSWORD }} # Registry credentials to pull the image
-      AQUA_IMAGE: ${{ vars.AQUA_IMAGE}} # The full name of the image (repository path and tag)
+      AQUA_REG: ${{ vars.AQUA_REG}}
+      AQUA_REG_USERNAME: ${{ secrets.AQUA_REG_USERNAME }}
+      AQUA_REG_PASSWORD: ${{ secrets.AQUA_REG_PASSWORD }}
+      AQUA_IMAGE: ${{ vars.AQUA_IMAGE}}
 
-      AQUA_CONSOLE_URL: ${{ vars.AQUA_CONSOLE_URL }} # For CWPP API calls
-      AQUA_AUTH_URL: ${{ vars.AQUA_AUTH_URL }} # For authenticating against Aqua SaaS
+      AQUA_CONSOLE_URL: ${{ vars.AQUA_CONSOLE_URL }}
+      AQUA_AUTH_URL: ${{ vars.AQUA_AUTH_URL }}
       AQUA_GATEWAY_URL: ${{ vars.AQUA_GATEWAY_URL }}
       AQUA_SAAS_USER: ${{ secrets.AQUA_SAAS_USER }}
       AQUA_SAAS_PASSWORD: ${{ secrets.AQUA_SAAS_PASSWORD }}

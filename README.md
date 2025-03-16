@@ -40,6 +40,10 @@ The features of the local_manifests.yml:
 | `AQUA_DOCKER_USERNAME` | Docker registry username used to pull Aqua Enforcer images |
 | `AQUA_DOCKER_PASSWORD` | Docker registry password used to pull Aqua Enforcer images |
 | `AQUA_ENFORCER_TOKEN`  | Token for authenticating the Aqua Enforcer with Aqua Server |
+| `AQUA_REG_USERNAME` | Username for authenticating with the registry that stores the Aqua image |
+| `AQUA_REG_PASSWORD` | Password for authenticating with the registry that stores the Aqua image |
+| `AQUA_SAAS_USER` | Aqua SaaS user that will make the API call |
+| `AQUA_SAAS_PASSWORD` | Password of Aqua SaaS users that will make the API call |
 | `KUBE_CONFIG_B64` | Base64-encoded Kubernetes configuration file (kubeconfig) for authenticating with the cluster |
 
 #### Variables
@@ -47,7 +51,11 @@ The features of the local_manifests.yml:
 | Name | Description |
 | ---- | ----------- |
 | `PLATFORM`| Specifies the Kubernetes platform (e.g., `eks`, `gke`, `native_k8s`, `openshift`, etc.) for the RBAC manifest |
-| `AQUA_GATEWAY_URL` | The URL of the Aqua Gateway that the Enforcer connects to |
+| `AQUA_CONSOLE_URL` | The Aqua Console URL for making CWPP API calls. Needs to be prepended by https |
+| `AQUA_AUTH_URL` | The Aqua URL for SaaS authentication. It could be the same as the console value. Needs to be prepended by https |
+| `AQUA_GATEWAY_URL` | The URL of the Aqua Gateway that the Enforcer connects to. Does not need to be prepended by https |
+| `AQUA_REG` | The registry that stores the Aqua Enforcer image |
+| `AQUA_IMAGE` | The full name of the Aqua Enforcer image (repository path and tag) |
 
 ## Notes
 
